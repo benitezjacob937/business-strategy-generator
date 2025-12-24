@@ -34,38 +34,62 @@ const LS_PLAN_KEY = "bsg_latest_plan_v1";
 function safeStr(v: any) {
   return typeof v === "string" ? v.trim() : "";
 }
+
 function toStrArray(v: any): string[] {
   if (Array.isArray(v)) return v.map((x) => safeStr(x)).filter(Boolean);
+
   if (typeof v === "string")
     return v
       .split("\n")
       .map((x) => x.trim())
       .filter(Boolean)
       .map((x) => x.replace(/^\s*[-•\d.)]+\s*/, "").trim());
+
   return [];
 }
 
 function coercePlan(raw: any, ideaFallback: string, inputsFallback: Inputs): Plan {
-  const id = safeStr(raw?.id) || `plan_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const id =
+    safeStr(raw?.id) || `plan_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   const createdAt = safeStr(raw?.createdAt) || new Date().toISOString();
   const idea = safeStr(raw?.idea) || ideaFallback;
 
   const inputsRaw = raw?.inputs && typeof raw.inputs === "object" ? raw.inputs : {};
   const inputs: Inputs = {
-    targetCustomer: safeStr(inputsRaw?.targetCustomer) || safeStr((raw as any)?.targetCustomer) || inputsFallback.targetCustomer,
-    coreOffer: safeStr(inputsRaw?.coreOffer) || safeStr((raw as any)?.coreOffer) || inputsFallback.coreOffer,
-    differentiator: safeStr(inputsRaw?.differentiator) || safeStr((raw as any)?.differentiator) || inputsFallback.differentiator,
-    pricePoint: safeStr(inputsRaw?.pricePoint) || safeStr((raw as any)?.pricePoint) || inputsFallback.pricePoint,
-    geography: safeStr(inputsRaw?.geography) || safeStr((raw as any)?.geography) || inputsFallback.geography,
-    goal14Day: safeStr(inputsRaw?.goal14Day) || safeStr((raw as any)?.goal14Day) || inputsFallback.goal14Day,
-    notes: safeStr(inputsRaw?.notes) || safeStr((raw as any)?.notes) || inputsFallback.notes,
+    targetCustomer:
+      safeStr(inputsRaw?.targetCustomer) ||
+      safeStr((raw as any)?.targetCustomer) ||
+      inputsFallback.targetCustomer,
+    coreOffer:
+      safeStr(inputsRaw?.coreOffer) ||
+      safeStr((raw as any)?.coreOffer) ||
+      inputsFallback.coreOffer,
+    differentiator:
+      safeStr(inputsRaw?.differentiator) ||
+      safeStr((raw as any)?.differentiator) ||
+      inputsFallback.differentiator,
+    pricePoint:
+      safeStr(inputsRaw?.pricePoint) ||
+      safeStr((raw as any)?.pricePoint) ||
+      inputsFallback.pricePoint,
+    geography:
+      safeStr(inputsRaw?.geography) ||
+      safeStr((raw as any)?.geography) ||
+      inputsFallback.geography,
+    goal14Day:
+      safeStr(inputsRaw?.goal14Day) ||
+      safeStr((raw as any)?.goal14Day) ||
+      inputsFallback.goal14Day,
+    notes:
+      safeStr(inputsRaw?.notes) ||
+      safeStr((raw as any)?.notes) ||
+      inputsFallback.notes,
   };
 
   const stepsRaw = Array.isArray(raw?.steps) ? raw.steps : [];
   const steps: Step[] = stepsRaw.slice(0, 3).map((s: any, i: number) => ({
     title: safeStr(s?.title) || `Step ${i + 1}`,
     summary: safeStr(s?.summary) || "",
-    // accept a few possible shapes
     whatThisDoes: toStrArray(s?.whatThisDoes ?? s?.what ?? s?.explain),
     howTo: toStrArray(s?.howTo ?? s?.how_to ?? s?.checklist),
     output: safeStr(s?.output ?? s?.deliverable) || "",
@@ -86,7 +110,7 @@ function coercePlan(raw: any, ideaFallback: string, inputsFallback: Inputs): Pla
 
 function planToText(plan: Plan): string {
   const lines: string[] = [];
-  lines.push("Business Strategy Generator — 3-Step Plan");
+  lines.push("ProfitBot — AI Business Plan Generator");
   lines.push(`Idea: ${plan.idea}`);
   lines.push(`Generated: ${new Date(plan.createdAt).toLocaleString()}`);
   lines.push("");
@@ -187,7 +211,6 @@ export default function Page() {
       const resp = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ Option A: idea + inputs packaged for a real product
         body: JSON.stringify({
           idea: ideaTrimmed,
           targetCustomer: inputs.targetCustomer || "",
@@ -209,8 +232,6 @@ export default function Page() {
 
       const nextPlan = coercePlan(data, ideaTrimmed, inputs);
       setPlan(nextPlan);
-
-      // ✅ Save for calendar
       localStorage.setItem(LS_PLAN_KEY, JSON.stringify(nextPlan));
     } catch (e: any) {
       setError(e?.message || "Something went wrong.");
@@ -245,7 +266,6 @@ export default function Page() {
   }
 
   function onPrint() {
-    // Print the page; CSS below hides the input area for printing
     window.print();
   }
 
@@ -274,14 +294,24 @@ export default function Page() {
       `}</style>
 
       <div className="print-wrap mx-auto max-w-4xl px-6 py-10">
-        <div className="no-print mb-6 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/40 px-3 py-1 text-sm">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          Generator
+        {/* top tags */}
+        <div className="no-print mb-6 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/40 px-3 py-1 text-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            Generator
+          </div>
+
+          {/* brand label */}
+          <div className="text-sm font-semibold text-zinc-300">ProfitBot</div>
         </div>
 
-        <h1 className="text-3xl font-extrabold tracking-tight">Business Strategy Generator</h1>
-        <p className="no-print mt-2 text-sm text-zinc-400">
-          Generate a 3-step plan with detailed “how-to” checklists, then use the 14-day calendar.
+        {/* headline */}
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          AI Business Plan Generator
+        </h1>
+        <p className="mt-3 text-zinc-300">
+          Generate a 3-step plan with detailed how-to checklists, then use the 14-day
+          calendar.
         </p>
 
         {/* INPUTS */}
@@ -296,15 +326,41 @@ export default function Page() {
           />
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <Field label="Target customer" value={inputs.targetCustomer || ""} onChange={(v) => setInputs((p) => ({ ...p, targetCustomer: v }))} />
-            <Field label="Core offer" value={inputs.coreOffer || ""} onChange={(v) => setInputs((p) => ({ ...p, coreOffer: v }))} />
-            <Field label="Differentiator" value={inputs.differentiator || ""} onChange={(v) => setInputs((p) => ({ ...p, differentiator: v }))} />
-            <Field label="Price point" value={inputs.pricePoint || ""} onChange={(v) => setInputs((p) => ({ ...p, pricePoint: v }))} />
-            <Field label="Geography / market" value={inputs.geography || ""} onChange={(v) => setInputs((p) => ({ ...p, geography: v }))} />
-            <Field label="14-day goal" value={inputs.goal14Day || ""} onChange={(v) => setInputs((p) => ({ ...p, goal14Day: v }))} />
+            <Field
+              label="Target customer"
+              value={inputs.targetCustomer || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, targetCustomer: v }))}
+            />
+            <Field
+              label="Core offer"
+              value={inputs.coreOffer || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, coreOffer: v }))}
+            />
+            <Field
+              label="Differentiator"
+              value={inputs.differentiator || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, differentiator: v }))}
+            />
+            <Field
+              label="Price point"
+              value={inputs.pricePoint || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, pricePoint: v }))}
+            />
+            <Field
+              label="Geography / market"
+              value={inputs.geography || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, geography: v }))}
+            />
+            <Field
+              label="14-day goal"
+              value={inputs.goal14Day || ""}
+              onChange={(v) => setInputs((p) => ({ ...p, goal14Day: v }))}
+            />
           </div>
 
-          <label className="mt-4 block text-sm font-medium text-zinc-200">Notes (optional)</label>
+          <label className="mt-4 block text-sm font-medium text-zinc-200">
+            Notes (optional)
+          </label>
           <textarea
             className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-sm outline-none focus:border-emerald-500/60"
             rows={3}
@@ -365,7 +421,9 @@ export default function Page() {
         {plan ? (
           <div className="mt-8 space-y-4">
             <div className="print-card rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5">
-              <div className="text-xs text-zinc-400 print-muted">Plan ID: {plan.id}</div>
+              <div className="text-xs text-zinc-400 print-muted">
+                Plan ID: {plan.id}
+              </div>
               <div className="mt-1 text-xl font-bold">{plan.idea}</div>
               <div className="mt-1 text-xs text-zinc-500 print-muted">
                 Generated: {new Date(plan.createdAt).toLocaleString()}
@@ -373,18 +431,38 @@ export default function Page() {
             </div>
 
             {plan.steps.map((s, idx) => (
-              <div key={idx} className="print-card rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5">
-                <div className="text-xs font-semibold text-emerald-300 no-print">STEP {idx + 1}</div>
-                <div className="text-lg font-extrabold">Step {idx + 1}: {s.title}</div>
-                {s.summary ? <div className="print-muted mt-2 text-sm text-zinc-300">{s.summary}</div> : null}
+              <div
+                key={idx}
+                className="print-card rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5"
+              >
+                <div className="text-xs font-semibold text-emerald-300 no-print">
+                  STEP {idx + 1}
+                </div>
+                <div className="text-lg font-extrabold">
+                  Step {idx + 1}: {s.title}
+                </div>
+
+                {s.summary ? (
+                  <div className="print-muted mt-2 text-sm text-zinc-300">
+                    {s.summary}
+                  </div>
+                ) : null}
 
                 <div className="mt-4 grid gap-3">
                   <Section title="What this step does" bullets={s.whatThisDoes} />
-                  <Section title="How to do it (checklist)" bullets={s.howTo} checkboxStyle />
+                  <Section
+                    title="How to do it (checklist)"
+                    bullets={s.howTo}
+                    checkboxStyle
+                  />
                   {s.output ? (
                     <div className="rounded-xl border border-zinc-800 bg-black/20 p-4 print-card">
-                      <div className="text-sm font-semibold text-zinc-200">Output</div>
-                      <div className="print-muted mt-2 text-sm text-zinc-300">{s.output}</div>
+                      <div className="text-sm font-semibold text-zinc-200">
+                        Output
+                      </div>
+                      <div className="print-muted mt-2 text-sm text-zinc-300">
+                        {s.output}
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -397,7 +475,15 @@ export default function Page() {
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div>
       <label className="text-sm font-medium text-zinc-200">{label}</label>
@@ -411,11 +497,21 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
-function Section({ title, bullets, checkboxStyle }: { title: string; bullets: string[]; checkboxStyle?: boolean }) {
+function Section({
+  title,
+  bullets,
+  checkboxStyle,
+}: {
+  title: string;
+  bullets: string[];
+  checkboxStyle?: boolean;
+}) {
   const items = (bullets || []).filter(Boolean);
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-black/20 p-4 print-card">
       <div className="text-sm font-semibold text-zinc-200">{title}</div>
+
       {items.length ? (
         <ul className="print-muted mt-2 space-y-2 text-sm text-zinc-300">
           {items.map((b, i) => (
@@ -425,7 +521,9 @@ function Section({ title, bullets, checkboxStyle }: { title: string; bullets: st
           ))}
         </ul>
       ) : (
-        <div className="print-muted mt-2 text-sm text-zinc-500">No details returned for this section.</div>
+        <div className="print-muted mt-2 text-sm text-zinc-500">
+          No details returned for this section.
+        </div>
       )}
     </div>
   );
